@@ -1,0 +1,10 @@
+- Parser for conf files
+  - yaml
+  - legacy incrontab
+
+- Data structure for watches
+
+- lachd daemon
+
+- lachtab command
+

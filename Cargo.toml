@@ -1,0 +1,17 @@
+[package]
+name = "lachesis"
+version = "0.1.0"
+authors = ["jak <jak@dev.cymru>"]
+edition = "2018"
+
+[[bin]]
+name = "lachtab"
+path = "src/lachtab.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+structopt = "0.3.13"
+quicli = "0.4"
+tempfile = "3.2.0"
+fork = "0.1.18"
