@@ -10,7 +10,11 @@ use std::env;
 use std::io::ErrorKind;
 
 use fork::{fork, Fork};
-use std::process::Command;
+
+use std::sync::mpsc::channel;
+
+mod lachtable;
+use lachtable::{Table, UnloadedTable};
 
 #[derive(Debug, StructOpt)]
 struct Cli {
@@ -35,25 +39,19 @@ impl Daemon {
     }
 }
 
-struct Table {
-    path: std::path::PathBuf,
-}
-
-impl Table {
-    fn new(pb: std::path::PathBuf) -> Table {
-        Table { path : pb }
-    }
-}
-
 fn load_tables() -> Vec<Table> {
     // todo source from config file?
     let dirs = vec![ "/etc/lach.d" ];
 
     // todo fix rust crimes
-    dirs.into_iter().map(|dir| fs::read_dir(dir).ok())
+    let tables : Vec<UnloadedTable> = dirs.into_iter().map(|dir| fs::read_dir(dir).ok())
         .map(|file_list| file_list.unwrap().map(|entry| entry.ok().unwrap().path()).collect())
         .map(|path_buffer| Table::new(path_buffer))
-        .collect()
+        .collect();
+
+    let loaded_tables = tables.into_iter().map(|table| table.load()).collect();
+
+    return loaded_tables;
 }
 
 fn main() {
@@ -66,9 +64,27 @@ fn main() {
     }
     
     // load lachtables
-    let tables = load_tables();
+    let mut tables = load_tables();
+
+    println!("{:?}", tables);
 
     // setup inotify
+    //let (tx, rx) = unbounded();
+
+    let (tx, rx) = channel();
+
+    for table in &mut tables {
+        table.watch(tx.clone());
+    }
+
+    println!("{:?}", tables);
 
     // loop { poll }
+
+    loop {
+        match rx.recv() {
+           Ok(event) => println!("{:?}", event),
+           Err(e) => println!("watch error: {:?}", e),
+        }
+    }
 }
